@@ -17,7 +17,7 @@ async def root():
     return {"message": "Bienvenido a la API de Demo-Causas"}
 
 # Enable CORS
-origins = []
+origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
 regex_origins = r"^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$"
 

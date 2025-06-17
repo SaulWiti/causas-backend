@@ -38,10 +38,14 @@ async def crear_causa(request: Causa):
 
     document = jsonable_encoder(request)
     await collection_causas.insert_one(document)
+    
+    if "_id" in document:
+        del document["_id"]
+    
     return document
 
 
-@router.get("/{id_causa}")
+@router.get("/{id_causa}/")
 async def obtener_causa(id_causa:str):
     document = await collection_causas.find_one(
         {"id_causa":id_causa},
@@ -67,7 +71,7 @@ async def obtener_todas_causas():
     return []
 
 
-@router.put("/{id_causa}")
+@router.put("/{id_causa}/")
 async def actualizar_causa(id_causa:str, request:Causa):
     causa_db = await collection_causas.find_one(
         {"id_causa":id_causa},
@@ -88,7 +92,7 @@ async def actualizar_causa(id_causa:str, request:Causa):
     return document
 
 
-@router.patch("/{id_causa}")
+@router.patch("/{id_causa}/")
 async def actualizar_causa_parte(id_causa:str, request:Causa):
     causa_db = await collection_causas.find_one(
         {"id_causa":id_causa},
@@ -116,13 +120,13 @@ async def actualizar_causa_parte(id_causa:str, request:Causa):
     )
     return document
 
-@router.delete("/{id_causa}")
+@router.delete("/{id_causa}/")
 async def eliminar_causa(id_causa:str):
     await collection_causas.delete_one({"id_causa":id_causa})
     return {"message": "Causa eliminada exitosamente"}
 
 
-@router.get("/proximo/id")
+@router.get("/proximo/id/")
 async def obtener_proximo_id():
     anio = datetime.now().year
     
