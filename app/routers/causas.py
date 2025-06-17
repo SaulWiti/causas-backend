@@ -18,7 +18,7 @@ router = APIRouter(
 )
 
 
-@router.post("")
+@router.post("/")
 async def crear_causa(request: Causa):
     # 1. Comprobar si ya existe una causa con ese id_causa
     existente = await collection_causas.find_one(
@@ -38,7 +38,7 @@ async def crear_causa(request: Causa):
 
     document = jsonable_encoder(request)
     await collection_causas.insert_one(document)
-    return {"message": "Causa creada exitosamente"}
+    return document
 
 
 @router.get("/{id_causa}")
@@ -56,7 +56,7 @@ async def obtener_causa(id_causa:str):
     )
 
 
-@router.get("")
+@router.get("/")
 async def obtener_todas_causas():
     documents = await collection_causas.find(
         projection={"_id":0}
@@ -64,14 +64,20 @@ async def obtener_todas_causas():
     if documents:
         return documents
     
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="No se encontraron causas"
-    )
+    return []
 
 
 @router.put("/{id_causa}")
 async def actualizar_causa(id_causa:str, request:Causa):
+    causa_db = await collection_causas.find_one(
+        {"id_causa":id_causa},
+        projection={"_id":0}
+    )
+    if not causa_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No se encontró la causa a actualizar"
+        )
     now = datetime.now()
     request.fecha_ultima_actualizacion = now
     document = jsonable_encoder(request)
@@ -79,7 +85,7 @@ async def actualizar_causa(id_causa:str, request:Causa):
         {"id_causa":id_causa},
         {"$set":document}
     )
-    return {"message": "Causa actualizada exitosamente"}
+    return document
 
 
 @router.patch("/{id_causa}")
@@ -108,7 +114,7 @@ async def actualizar_causa_parte(id_causa:str, request:Causa):
         {"id_causa":id_causa},
         {"$set":document}
     )
-    return {"message": "Causa actualizada exitosamente"}
+    return document
 
 @router.delete("/{id_causa}")
 async def eliminar_causa(id_causa:str):
