@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import(
-    causas
+    causas,
+    bot_whatsapp
 )
 
 app = FastAPI(
@@ -11,6 +12,7 @@ app = FastAPI(
         )
 
 app.include_router(causas.router)
+app.include_router(bot_whatsapp.router)
 
 @app.get("/")
 async def root():
