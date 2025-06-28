@@ -9,3 +9,4 @@ db = client[config.name_db_mongo]
 
 # Collections
 collection_causas = db["causas"]
+collection_conversation_state = db["conversation_state"]

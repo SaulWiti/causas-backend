@@ -1,7 +1,7 @@
 from langchain_core.tools import tool
 from typing import Literal
 
-from ...db import collection_causas
+from ....db import collection_causas
 import re
 
 @tool

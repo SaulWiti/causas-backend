@@ -5,9 +5,6 @@ from .tools import tools_principal
 from .llm import gpt_4o
 from .prompts import node_prompts
 
-from langchain_core.messages import (
-    AIMessage, HumanMessage, ToolMessage
-)
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langgraph.prebuilt import ToolNode
 

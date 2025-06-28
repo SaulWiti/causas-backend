@@ -1,29 +1,46 @@
+from datetime import datetime
 from fastapi import (
     APIRouter, 
     Request,
     Query,
     BackgroundTasks,
+    Depends,
+    HTTPException,
+    status
 )
+
 from pprint import pprint
 
 from ..schemas.bot_whatsapp import (
-    ACKResponse, MessageAi, MessageUser
+    ACKResponse, 
+    MessageAi, 
+    MessageUser, 
+    WhatsappSendMessageRequest, 
+    BotLockRequest,
 )
 from ..schemas.bot_whatsapp.event import WhatsappEvent
-from ..schemas.bot_whatsapp.event.message import WhatsappMessageType
+from ..schemas.bot_whatsapp import (
+    Chats, Chat
+)
 
-from ..services.bot_whatsapp.agent import agent
-from ..core.config import config
-from ..core import http
+from ..services.bot_whatsapp.ai.agent import agent
+from ..services.bot_whatsapp.bot.bot_state import (
+    lock_bot, unlock_bot
+)
+from ..services.bot_whatsapp.bot.process_event import (
+    process_whatsapp_event, process_whatsapp_message
+)
+from ..db import collection_conversation_state
+from ..core.security import validate_api_key
 
 router = APIRouter(
     tags=["Bot-WhatsApp"],
 )
 
+
 # ================================================
 # Handle whatsapp webhook events
 # ================================================
-
 
 @router.get("/webhook/whatsapp")
 async def subscribe_to_webhook_events(
@@ -32,64 +49,6 @@ async def subscribe_to_webhook_events(
     print("hub.challenge", hub_challenge)
     return hub_challenge
 
-# ================================================
-# Handle whatsapp webhook events
-# ================================================
-
-
-async def get_message_text(event: WhatsappEvent) -> str | None:
-    phone_number = event.phone_number
-    if not phone_number:
-        return None
-
-    if event.message_type == WhatsappMessageType.TEXT:
-        return event.message_text
-
-    print("Message type not supported", event.message_type)
-
-    return None
-
-async def send_message(phone_number: str, message: str):
-    url = f"{config.graph_facebook_url}/{config.whatsapp_phone_id}/messages"
-    print("================================================")
-    print("Sending message")
-    print(f"To {phone_number}")
-    print(f"Message: {message}")
-    print(f"POST {url}")
-    print("================================================")
-    headers = {
-        "Authorization": f"Bearer {config.whatsapp_api_key}",
-        "Content-Type": "application/json",
-    }
-    data = {
-        "messaging_product": "whatsapp",
-        "recipient_type": "individual",
-        "to": phone_number,
-        "type": "text",
-        "text": {"body": message},
-    }
-    response = await http.post(url, headers=headers, data=data)
-    pprint(response)
-    print("================================================")
-    return response
-
-async def process_whatsapp_event(event: WhatsappEvent):
-    user_id = event.phone_number
-    message_text = await get_message_text(event)
-
-    if user_id and message_text:        
-        message_ai = await agent(user_id, message_text)
-
-        await send_message(user_id, message_ai)
-        
-        pprint("================================================")
-        pprint("Send Message Ai")
-        pprint("================================================")
-
-    else:
-        pprint("================================================")
-        pprint("Error Send Message Ai")
-        pprint("================================================")
 
 @router.post("/webhook/whatsapp")
 async def receive_webhook_events(
@@ -118,17 +77,92 @@ async def receive_webhook_events(
     return ACKResponse(message="Message received")
 
 
+# ================================================
+# Handle whatsapp send message
+# ================================================
+
+@router.post("/webhook/whatsapp/send-message")
+async def whatsapp_send_message(
+    body: WhatsappSendMessageRequest,
+    background_tasks: BackgroundTasks,
+    _: str = Depends(validate_api_key),
+) -> ACKResponse:
+
+    background_tasks.add_task(process_whatsapp_message, body)
+    
+    return ACKResponse(message="Send Message")
+
+# ================================================
+# Handle whatsapp bot lock and unlock
+# ================================================
+
+
+@router.post("/webhook/whatsapp/lock")
+async def lock_whastapp_bot(
+    body: BotLockRequest, _: str = Depends(validate_api_key)
+) -> ACKResponse:
+    await lock_bot(body.phone_number)
+    return ACKResponse(message="Bot locked")
+
+
+@router.post("/webhook/whatsapp/unlock")
+async def unlock_whastapp_bot(
+    body: BotLockRequest, _: str = Depends(validate_api_key)
+) -> ACKResponse:
+    await unlock_bot(body.phone_number)
+    return ACKResponse(message="Bot unlocked")
+
+
+# ================================================
+# Handle whatsapp ai message
+# ================================================
+
 @router.post("/bot-whatsapp/message/", response_model=MessageAi)
 async def get_message_ai(
-    request: MessageUser
+    request: MessageUser,
+    _: str = Depends(validate_api_key),
 ):
     pprint("================================")
     pprint("Received message user")
     pprint(request.model_dump())
     pprint("================================")
-    messages_ai = await agent(request.user_id, request.message)
+    messages_ai = await agent(request.phone_number, request.message)
     
     return MessageAi(message=messages_ai)
+
+# ================================================
+# Handle whatsapp get chats
+# ================================================
+
+@router.get("/bot-whatsapp/chats/", response_model=Chats)
+async def get_chats():
+    
+    documents = await collection_conversation_state.find().to_list()
+    try:
+        documents.sort(
+        key=lambda x: datetime.fromisoformat(x.get('date', '2024-06-27T18:16:15.847547Z')), 
+        reverse=True
+        )
+    except Exception as e:
+        print("Error: ", e)
+        pass
+
+    return Chats(chats=documents)
+
+# ================================================
+# Handle whatsapp get chat
+# ================================================
+
+@router.get("/bot-whatsapp/chat/{phone_number}", response_model=Chat)
+async def get_chat(phone_number: str):
+    
+    document = await collection_conversation_state.find_one({"phone_number": phone_number})
+    
+    if document is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
+
+    return Chat(**document)
+
 
 
 

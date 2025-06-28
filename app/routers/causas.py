@@ -8,7 +8,7 @@ from ..core.security import validate_api_key
 from ..models.causas import Causa
 from ..db import collection_causas
 import re
-from datetime import datetime
+from datetime import datetime, UTC
 
 router = APIRouter(
     tags=["Causas"],
@@ -32,7 +32,7 @@ async def crear_causa(request: Causa):
         )
     
     # 2. Si no existe, crearla
-    now = datetime.now()
+    now = datetime.now(UTC)
     request.fecha_creacion = now
     request.fecha_ultima_actualizacion = now
 
@@ -82,7 +82,7 @@ async def actualizar_causa(id_causa:str, request:Causa):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No se encontró la causa a actualizar"
         )
-    now = datetime.now()
+    now = datetime.now(UTC)
     request.fecha_ultima_actualizacion = now
     document = jsonable_encoder(request)
     await collection_causas.update_one(
@@ -110,7 +110,7 @@ async def actualizar_causa_parte(id_causa:str, request:Causa):
 
     causa_model_update = causa_model.model_copy(update=update_data)
     
-    causa_model_update.fecha_ultima_actualizacion = datetime.now()
+    causa_model_update.fecha_ultima_actualizacion = datetime.now(UTC)
     
     document = jsonable_encoder(causa_model_update)
 
