@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import(
     causas,
+    tareas,
     bot_whatsapp,
     socket
 )
@@ -13,6 +14,7 @@ app = FastAPI(
         )
 
 app.include_router(causas.router)
+app.include_router(tareas.router)
 app.include_router(bot_whatsapp.router)
 app.include_router(socket.router)
 

@@ -8,6 +8,7 @@ class BasePrompt(BaseModel):
 
 class Prompts(BaseModel):
     chat_principal: BasePrompt
+    chat_especialista: BasePrompt
 
 
 def load_prompts() -> Prompts:

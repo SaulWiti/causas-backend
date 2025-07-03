@@ -1,7 +1,11 @@
 from langchain_core.tools import tool
 from typing import Literal
-
-from ....db import collection_causas
+from ..bot.bot_state import lock_bot
+from ....db import (
+    collection_causas, collection_tareas
+)
+from langgraph.prebuilt import InjectedState
+from typing import Annotated
 import re
 
 @tool
@@ -38,6 +42,9 @@ async def get_causa_by_id(id_causa: str) -> dict | None:
 
     filtro = {'id_causa': id_causa}
     causa = await collection_causas.find_one(filtro, projection={'_id': 0})
+    tareas = await collection_tareas.find(filtro, projection={'_id': 0}).to_list()
+    if causa:
+        causa['tareas'] = tareas
     return causa
 
 @tool
@@ -73,5 +80,22 @@ async def get_causa_by_persona(
     causa = await collection_causas.find(filtro, projection={'_id': 0}).to_list()
     return causa
 
+@tool
+async def change_human(
+    state: Annotated[dict, InjectedState]
+)->str:
+    """
+    Se llama cuando se necesita pasar el control al equipo humano
+    """
+    try:
+        phone_number = state.get("phone_number")
+
+        await lock_bot(phone_number)
+        return "lock"
+    except Exception as e:
+        return f"Error: {e}"
+
+
+tools_especialista = [change_human]
 tools_principal = [get_causa_by_id, get_causa_by_persona]
 

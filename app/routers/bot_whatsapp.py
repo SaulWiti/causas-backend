@@ -97,7 +97,7 @@ async def whatsapp_send_message(
 # ================================================
 
 
-@router.post("/webhook/whatsapp/lock")
+@router.put("/webhook/whatsapp/lock")
 async def lock_whastapp_bot(
     body: BotLockRequest, _: str = Depends(validate_api_key)
 ) -> ACKResponse:
@@ -105,7 +105,7 @@ async def lock_whastapp_bot(
     return ACKResponse(message="Bot locked")
 
 
-@router.post("/webhook/whatsapp/unlock")
+@router.put("/webhook/whatsapp/unlock")
 async def unlock_whastapp_bot(
     body: BotLockRequest, _: str = Depends(validate_api_key)
 ) -> ACKResponse:

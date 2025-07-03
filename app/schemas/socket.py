@@ -17,15 +17,19 @@ class MessageSocket(BaseModel):
         None,
         description="Número de teléfono del chat que se debe actualizar"
     )
-    data: Message = Field(
-        ..., 
+    data: Message | None = Field(
+        None, 
         description="Contenido del mensaje"
+    )
+    locked: bool | None = Field(
+        None,
+        description="Bot bloqueado"
     )
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
         description="Marca de tiempo del mensaje"
     )
-    sender: Optional[str] = Field(
+    sender: str|None = Field(
         None, 
         description="ID del remitente (opcional)"
     )

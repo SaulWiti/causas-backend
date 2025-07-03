@@ -11,13 +11,18 @@ from ..api import send_message
 from ..ai.agent import agent
 from ....schemas.bot_whatsapp import WhatsappSendMessageRequest
 from ....core.socket import manager
-from ....schemas.socket import MessageSocket, MessageType
+from ....schemas.socket import (
+    MessageSocket, MessageType
+)
 from datetime import (
     datetime, UTC
 )
 from ....models.bot import Message
 
-async def broadcast_message(phone_number: str, content: str, role: str):
+async def broadcast_message(
+    phone_number: str, content: str, role: str
+)->bool:
+
     try:
         ws_message = MessageSocket(
             phone_number=phone_number,
