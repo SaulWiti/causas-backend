@@ -25,7 +25,7 @@ from ..schemas.bot_whatsapp import (
 
 from ..services.bot_whatsapp.ai.agent import agent
 from ..services.bot_whatsapp.bot.bot_state import (
-    lock_bot, unlock_bot
+    lock_bot, unlock_bot, update_message_chat
 )
 from ..services.bot_whatsapp.bot.process_event import (
     process_whatsapp_event, process_whatsapp_message
@@ -42,7 +42,9 @@ router = APIRouter(
 # Handle whatsapp webhook events
 # ================================================
 
-@router.get("/webhook/whatsapp")
+@router.get(
+    "/webhook/whatsapp"
+)
 async def subscribe_to_webhook_events(
     hub_challenge: str | None = Query(None, alias="hub.challenge"),
 ):
@@ -50,7 +52,9 @@ async def subscribe_to_webhook_events(
     return hub_challenge
 
 
-@router.post("/webhook/whatsapp")
+@router.post(
+    "/webhook/whatsapp"
+)
 async def receive_webhook_events(
     request: Request, background_tasks: BackgroundTasks
 ) -> ACKResponse:
@@ -81,11 +85,13 @@ async def receive_webhook_events(
 # Handle whatsapp send message
 # ================================================
 
-@router.post("/webhook/whatsapp/send-message")
+@router.post(
+    "/webhook/whatsapp/send-message", 
+    dependencies=[Depends(validate_api_key)]
+)
 async def whatsapp_send_message(
     body: WhatsappSendMessageRequest,
-    background_tasks: BackgroundTasks,
-    _: str = Depends(validate_api_key),
+    background_tasks: BackgroundTasks
 ) -> ACKResponse:
 
     background_tasks.add_task(process_whatsapp_message, body)
@@ -97,17 +103,23 @@ async def whatsapp_send_message(
 # ================================================
 
 
-@router.put("/webhook/whatsapp/lock")
+@router.put(
+    "/webhook/whatsapp/lock", 
+    dependencies=[Depends(validate_api_key)]
+)
 async def lock_whastapp_bot(
-    body: BotLockRequest, _: str = Depends(validate_api_key)
+    body: BotLockRequest
 ) -> ACKResponse:
     await lock_bot(body.phone_number)
     return ACKResponse(message="Bot locked")
 
 
-@router.put("/webhook/whatsapp/unlock")
+@router.put(
+    "/webhook/whatsapp/unlock", 
+    dependencies=[Depends(validate_api_key)]
+)
 async def unlock_whastapp_bot(
-    body: BotLockRequest, _: str = Depends(validate_api_key)
+    body: BotLockRequest
 ) -> ACKResponse:
     await unlock_bot(body.phone_number)
     return ACKResponse(message="Bot unlocked")
@@ -117,10 +129,13 @@ async def unlock_whastapp_bot(
 # Handle whatsapp ai message
 # ================================================
 
-@router.post("/bot-whatsapp/message/", response_model=MessageAi)
+@router.post(
+    "/bot-whatsapp/message/", 
+    response_model=MessageAi, 
+    dependencies=[Depends(validate_api_key)]
+)
 async def get_message_ai(
-    request: MessageUser,
-    _: str = Depends(validate_api_key),
+    request: MessageUser
 ):
     pprint("================================")
     pprint("Received message user")
@@ -134,7 +149,11 @@ async def get_message_ai(
 # Handle whatsapp get chats
 # ================================================
 
-@router.get("/bot-whatsapp/chats/", response_model=Chats)
+@router.get(
+    "/bot-whatsapp/chats/", 
+    response_model=Chats, 
+    dependencies=[Depends(validate_api_key)]
+)
 async def get_chats():
     
     documents = await collection_conversation_state.find().to_list()
@@ -153,7 +172,11 @@ async def get_chats():
 # Handle whatsapp get chat
 # ================================================
 
-@router.get("/bot-whatsapp/chat/{phone_number}", response_model=Chat)
+@router.get(
+    "/bot-whatsapp/chat/{phone_number}", 
+    response_model=Chat, 
+    dependencies=[Depends(validate_api_key)]
+)
 async def get_chat(phone_number: str):
     
     document = await collection_conversation_state.find_one({"phone_number": phone_number})
@@ -162,6 +185,25 @@ async def get_chat(phone_number: str):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
 
     return Chat(**document)
+
+# ================================================
+# Handle whatsapp Update Chat
+# ================================================
+
+@router.put(
+    "/bot-whatsapp/update-chat/{phone_number}", 
+    response_model=ACKResponse, 
+    dependencies=[Depends(validate_api_key)]
+)
+async def update_chat(
+    phone_number: str, background_tasks: BackgroundTasks
+):
+    background_tasks.add_task(update_message_chat, phone_number)
+
+    return ACKResponse(message="Update Chat")
+
+
+
 
 
 

@@ -64,8 +64,16 @@ async def obtener_causa(id_causa:str):
 async def obtener_todas_causas():
     documents = await collection_causas.find(
         projection={"_id":0}
-    ).to_list(100)
+    ).to_list()
+    
     if documents:
+        documents.sort(
+        key=lambda x: (
+            datetime.fromisoformat(x.get('fecha_ultima_actualizacion', '2024-06-27T18:16:15.847547Z')),
+            datetime.fromisoformat(x.get('fecha_creacion', '2024-06-27T18:16:15.847547Z'))
+            ), 
+        reverse=True
+        )
         return documents
     
     return []

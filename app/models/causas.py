@@ -6,8 +6,8 @@ from bson import ObjectId
 # Submodelos para las partes (demandante/demandado)
 class Parte(BaseModel):
     nombre: str
-    rut: str
-    abogado: str
+    rut: None|str
+    abogado: None|str
     contacto: None|str = None
 
 class Tribunal(BaseModel):

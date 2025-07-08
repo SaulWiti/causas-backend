@@ -45,7 +45,9 @@ async def get_causa_by_id(id_causa: str) -> dict | None:
     tareas = await collection_tareas.find(filtro, projection={'_id': 0}).to_list()
     if causa:
         causa['tareas'] = tareas
-    return causa
+        return causa
+
+    return {'error': f"No se encontro ningun registro de causa con id: {id_causa}"}
 
 @tool
 async def get_causa_by_persona(
@@ -77,8 +79,16 @@ async def get_causa_by_persona(
     """
     rol = 'demandante' if demandante else 'demandado'
     filtro = {f'partes.{rol}.{campo}': valor}
-    causa = await collection_causas.find(filtro, projection={'_id': 0}).to_list()
-    return causa
+    lis_causas = await collection_causas.find(filtro, projection={
+        '_id': 0,
+        'id_causa': 1,
+        'titulo': 1,
+        'tipo': 1,
+        'descripcion': 1,
+        'fecha_creacion': 1
+    }).to_list()
+
+    return lis_causas
 
 @tool
 async def change_human(
@@ -97,5 +107,5 @@ async def change_human(
 
 
 tools_especialista = [change_human]
-tools_principal = [get_causa_by_id, get_causa_by_persona]
+tools_principal = [get_causa_by_id, get_causa_by_persona, change_human]
 

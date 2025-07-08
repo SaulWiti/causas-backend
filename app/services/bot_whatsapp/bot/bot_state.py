@@ -68,9 +68,14 @@ async def lock_bot(phone_number: str) -> None:
 
     await broadcast_state(phone_number, True)
 
-async def update_message(
-    phone_number: str, message: str, role: Literal["user", "assistant"]
+async def add_message_chat(
+    phone_number: str, 
+    message: str, 
+    role: Literal["user", "assistant", "human"],
+    name: None|str = None,
+    self_view: bool = True
 ) -> None:
+
     try:
         if not phone_number or not message:
             return
@@ -80,19 +85,29 @@ async def update_message(
         )
 
         date_now = datetime.now(UTC)
+        new_message = Message(role=role, content=message, date=date_now, self_view=self_view)
 
         if document is None:
             conversation_state = ConversationState(
                 phone_number=phone_number,
-                messages=[Message(role=role, content=message, date=date_now)],
+                name=name,
+                messages=[new_message],
                 date=date_now,
+                self_count_not_viewed = 0 if self_view else 1
             )
         else:
             conversation_state = ConversationState(**document)
+            if name:
+                conversation_state.name = name
+            
+            if not self_view:
+                conversation_state.self_count_not_viewed += 1
+
             if conversation_state.messages is None:
-                conversation_state.messages = [Message(role=role, content=message, date=date_now)]
+                conversation_state.messages = [new_message]
             else:
-                conversation_state.messages.append(Message(role=role, content=message, date=date_now))
+                conversation_state.messages.append(new_message)
+            
             conversation_state.date = date_now
 
         conversation_state_json = jsonable_encoder(conversation_state)
@@ -104,3 +119,38 @@ async def update_message(
         )
     except Exception as e:
         print("Error: ", e)
+
+async def update_message_chat(
+    phone_number: str,
+) -> None:
+    try:
+        document = await collection_conversation_state.find_one(
+            {"phone_number": phone_number}
+        )
+
+        if document is None:
+            return
+
+        conversation_state = ConversationState(**document)
+        conversation_state.self_count_not_viewed = 0
+
+        for message in conversation_state.messages:
+            message.self_view = True
+
+        conversation_state_json = jsonable_encoder(conversation_state)
+
+        await collection_conversation_state.update_one(
+            {"phone_number": phone_number},
+            {"$set": conversation_state_json},
+            upsert=True,
+        )
+
+        pprint("================================")
+        pprint("Updated message chat")
+        pprint("================================")
+
+    except Exception as e:
+        pprint("================================")
+        print("Error updated message chat: ", e)
+        pprint("================================")
+

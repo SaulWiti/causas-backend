@@ -42,3 +42,17 @@ def dumps_metadata(
         return output
 
     return serde.dumps(metadata)
+
+
+def datos_mini_causa(causa:dict):
+    """
+    Retorna un dict con los datos minimos de la causa
+    """
+    return {
+        "id_causa": causa["id_causa"],
+        "titulo": causa["titulo"],
+        "descripcion": causa["descripcion"],
+        "fecha_creacion": causa["fecha_creacion"],
+        "fecha_ultima_actualizacion": causa["fecha_ultima_actualizacion"],
+        "tipo": causa["tipo"]
+    }

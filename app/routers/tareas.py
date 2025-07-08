@@ -65,8 +65,16 @@ async def obtener_todas_tareas(id_causa:str):
     documents = await collection_tareas.find(
         {"id_causa":id_causa},
         projection={"_id":0}
-    ).to_list(100)
+    ).to_list()
+    
     if documents:
+        documents.sort(
+        key=lambda x: (
+            datetime.fromisoformat(x.get('fecha_ultima_actualizacion', '2024-06-27T18:16:15.847547Z')),
+            datetime.fromisoformat(x.get('fecha_creacion', '2024-06-27T18:16:15.847547Z'))
+            ), 
+        reverse=True
+        )
         return documents
     
     return []

@@ -4,8 +4,9 @@ from .state import (
 from .tools import (
     tools_principal, tools_especialista
 )
-from .llm import gpt_4o
+from .llm import gpt_4o, gpt_4o_mini
 from .prompts import node_prompts
+from .utils import datos_mini_causa
 
 from langchain_core.prompts import (
     ChatPromptTemplate, MessagesPlaceholder
@@ -26,10 +27,13 @@ async def principal(
 
     last_message = messages[-1]
 
-    if isinstance(last_message, ToolMessage):
-        
+    if (
+        isinstance(last_message, ToolMessage) and 
+        str(last_message.name) == "get_causa_by_id" and 
+        not(loads(last_message.content).get("error", None))
+       ):
         return {
-            "causa":loads(last_message.content),
+            "causa":datos_mini_causa(loads(last_message.content)),
             "nodo":"especialista"
         }
     
@@ -40,7 +44,7 @@ async def principal(
         ]
     )
 
-    llm = gpt_4o.bind_tools(tools_principal)
+    llm = gpt_4o_mini.bind_tools(tools_principal)
 
     chain = prompt | llm
 

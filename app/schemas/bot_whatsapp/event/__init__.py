@@ -101,3 +101,12 @@ class WhatsappEvent(BaseModel):
             return None
         except Exception:
             return None
+
+    @computed_field
+    @property
+    def user_name(self) -> str|None:
+        try:
+            return self.entry[0].changes[0].value.contacts[0].profile.name
+        except Exception as e:
+            print("Error get name: ", e)
+            return None

@@ -4,7 +4,7 @@ from ....schemas.bot_whatsapp.event.message import WhatsappMessageType
 from pprint import pprint
 
 from .bot_state import (
-    is_bot_locked, lock_bot, update_message
+    is_bot_locked, lock_bot, add_message_chat
 )
 
 from ..api import send_message
@@ -54,11 +54,14 @@ async def get_message_text(event: WhatsappEvent) -> str | None:
 
 async def process_whatsapp_event(event: WhatsappEvent):
     user_id = event.phone_number
+    name = event.user_name
     message_text = await get_message_text(event)
     locked = await is_bot_locked(user_id)
 
     if message_text:
-        await update_message(user_id, message_text, "user")
+        await add_message_chat(
+            user_id, message_text, "user", name, False
+        )
         
         pprint("================================================")
         pprint("Update Message User")
@@ -79,7 +82,9 @@ async def process_whatsapp_event(event: WhatsappEvent):
         pprint("Send Message Ai")
         pprint("================================================")
 
-        await update_message(user_id, message_ai, "assistant")
+        await add_message_chat(
+            user_id, message_ai, "assistant", name, True
+        )
 
         pprint("================================================")
         pprint("Update Message Ai")
@@ -96,6 +101,7 @@ async def process_whatsapp_event(event: WhatsappEvent):
         pprint("No Send Message Ai")
         print("-is_bot_locked: ", str(locked))
         print("-user_id: ", str(user_id))
+        print("-name: ", str(name))
         print("-message_text: ", str(message_text))
         pprint("================================================")
 
@@ -111,7 +117,7 @@ async def process_whatsapp_message(message: WhatsappSendMessageRequest):
     pprint("Send Message")
     pprint("================================================")
 
-    await update_message(message.phone_number, message.message, role="human")
+    await add_message_chat(message.phone_number, message.message, role="human")
     
     pprint("================================================")
     pprint("Update Message Human")
