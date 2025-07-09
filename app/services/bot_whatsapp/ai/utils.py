@@ -68,13 +68,13 @@ async def reset(
     criterio = {"thread_id": phone_number}
 
     # Eliminar documentos
-    _ = collection_langgraph_checkpoints.delete_many(criterio)
+    _ = await collection_langgraph_checkpoints.delete_many(criterio)
 
     # Criterio de eliminación
     criterio = {"phone_number": phone_number}
 
     # Eliminar documentos
-    _ = collection_conversation_state.delete_many(criterio)
+    _ = await collection_conversation_state.delete_many(criterio)
 
     return "Chat reiniciado correctamente"
 
