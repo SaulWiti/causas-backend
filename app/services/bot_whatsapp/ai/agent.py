@@ -22,7 +22,7 @@ async def agent(
 )->str:
     try:
         if message.lower() == "reset":
-            return reset(user_id)
+            return await reset(user_id)
 
         workflow = StateGraph(State)
 
