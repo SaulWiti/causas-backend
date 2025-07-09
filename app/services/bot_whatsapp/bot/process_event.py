@@ -73,7 +73,7 @@ async def process_whatsapp_event(event: WhatsappEvent):
         pprint("Broadcast Message User")
         pprint("================================================")
            
-    if user_id and message_text and not locked:        
+    if user_id and message_text and not locked:
         message_ai = await agent(user_id, message_text)
 
         await send_message(user_id, message_ai)

@@ -75,7 +75,8 @@ state: Annotated[dict, InjectedState]
         'titulo': 1,
         'tipo': 1,
         'descripcion': 1,
-        'fecha_creacion': 1
+        'fecha_creacion': 1,
+        'partes.demandante.nombre': 1
     }
 
     return await collection_causas.find(filtro,

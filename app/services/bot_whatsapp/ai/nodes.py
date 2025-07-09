@@ -44,7 +44,7 @@ async def principal(
         ]
     )
 
-    llm = gpt_4o_mini.bind_tools(tools_principal)
+    llm = gpt_4o.bind_tools(tools_principal)
 
     chain = prompt | llm
 
