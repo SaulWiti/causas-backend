@@ -14,12 +14,16 @@ from .edges import (
     get_state_init, get_state_principal,
     get_state_especialista
 )
+from .utils import reset
 from ..bot.bot_state import lock_bot
 
 async def agent(
     user_id: str, message: str
 )->str:
     try:
+        if message.lower() == "reset":
+            return reset(user_id)
+
         workflow = StateGraph(State)
 
         # Nodes

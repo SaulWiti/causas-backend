@@ -7,7 +7,10 @@ from langgraph.checkpoint.serde.base import SerializerProtocol
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 
 serde: SerializerProtocol = JsonPlusSerializer()
-
+from app.db import (
+    collection_langgraph_checkpoints,
+    collection_conversation_state
+)
 
 def loads_metadata(metadata: dict[str, Any]) -> CheckpointMetadata:
     """Deserialize metadata document
@@ -56,3 +59,22 @@ def datos_mini_causa(causa:dict):
         "fecha_ultima_actualizacion": causa["fecha_ultima_actualizacion"],
         "tipo": causa["tipo"]
     }
+
+async def reset(
+    phone_number:str
+)->str:
+
+    # Criterio de eliminación
+    criterio = {"thread_id": phone_number}
+
+    # Eliminar documentos
+    _ = collection_langgraph_checkpoints.delete_many(criterio)
+
+    # Criterio de eliminación
+    criterio = {"phone_number": phone_number}
+
+    # Eliminar documentos
+    _ = collection_conversation_state.delete_many(criterio)
+
+    return "Chat reiniciado correctamente"
+

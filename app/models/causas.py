@@ -2,13 +2,22 @@ from datetime import datetime
 from typing import Literal
 from pydantic import BaseModel, Field, EmailStr
 from bson import ObjectId
+from pydantic import field_validator
 
 # Submodelos para las partes (demandante/demandado)
 class Parte(BaseModel):
     nombre: str
     rut: None|str
     abogado: None|str
-    contacto: None|str = None
+    contacto: None|str = Field(default=None, max_length=20)
+
+    @field_validator('contacto', mode='before')
+    @classmethod
+    def normalizar_telefono(cls, v):
+        if v is None or v == "":
+            return None
+        # Elimina todo lo que no sea dígito
+        return ''.join(filter(str.isdigit, str(v)))
 
 class Tribunal(BaseModel):
     nombre: str
@@ -26,7 +35,7 @@ class Causa(BaseModel):
     partes: dict[Literal["demandante", "demandado"], Parte]
     tribunal: Tribunal
     notas: None|str = None
-    usuario_responsable: None|EmailStr = None
+    usuario_responsable: None|str = None
 
     class Config:
         arbitrary_types_allowed = True

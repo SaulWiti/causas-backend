@@ -51,44 +51,36 @@ async def get_causa_by_id(id_causa: str) -> dict | None:
 
 @tool
 async def get_causa_by_persona(
-    valor: str,
-    campo: Literal['rut', 'contacto'],
-    demandante: bool = True
+state: Annotated[dict, InjectedState]
 ) -> list[dict] | None:
     """
-    Busca una causa judicial según el RUT o contacto de una parte (demandante o demandado).
-
-    Parámetros:
-    -----------
-    valor : str
-        El valor a buscar (RUT o número de contacto).
-    campo : Literal['rut', 'contacto']
-        El campo por el cual se realizará la búsqueda.
-    demandante : bool, opcional (por defecto True)
-        Si es True, busca en el demandante; si es False, busca en el demandado.
-
-    Retorna:
-    --------
-    list[dict] | None
-        Si encuentra la causa, retorna la list de dict con todos los datos de las causas encontradas.
-        Si no encuentra ninguna causa, retorna None.
-
-    Ejemplo de uso:
-    --------------
-    causa = await get_causa_by_persona("12.345.678-9", "rut", demandante=False)
+    Busca todas las causas relacionadas con la persona.
+        
+    Returns:
+        Lista de causas relacionadas con la persona
     """
-    rol = 'demandante' if demandante else 'demandado'
-    filtro = {f'partes.{rol}.{campo}': valor}
-    lis_causas = await collection_causas.find(filtro, projection={
+
+    phone_number = state.get("phone_number")
+
+    phone_number = ''.join(filter(str.isdigit, str(phone_number)))
+    
+    # Buscamos coincidencias exactas
+    filtro = {
+    "partes.demandante.contacto": phone_number
+    }
+
+    proyeccion = {
         '_id': 0,
         'id_causa': 1,
         'titulo': 1,
         'tipo': 1,
         'descripcion': 1,
         'fecha_creacion': 1
-    }).to_list()
+    }
 
-    return lis_causas
+    return await collection_causas.find(filtro,
+        projection=proyeccion).to_list(length=100)
+
 
 @tool
 async def change_human(
