@@ -7,6 +7,7 @@ from ....db import (
 from langgraph.prebuilt import InjectedState
 from typing import Annotated
 import re
+from datetime import datetime, UTC
 
 @tool
 async def get_causa_by_id(id_causa: str) -> dict | None:
@@ -43,6 +44,14 @@ async def get_causa_by_id(id_causa: str) -> dict | None:
     filtro = {'id_causa': id_causa}
     causa = await collection_causas.find_one(filtro, projection={'_id': 0})
     tareas = await collection_tareas.find(filtro, projection={'_id': 0}).to_list()
+    if tareas:
+        tareas.sort(
+            key=lambda x: (
+            datetime.fromisoformat(x.get('fecha_ultima_actualizacion', '2024-06-27T18:16:15.847547Z')),
+            datetime.fromisoformat(x.get('fecha_creacion', '2024-06-27T18:16:15.847547Z'))
+            ), 
+        reverse=True
+        )
     if causa:
         causa['tareas'] = tareas
         return causa

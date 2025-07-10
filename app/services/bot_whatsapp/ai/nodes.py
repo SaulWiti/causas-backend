@@ -17,6 +17,10 @@ from langchain_core.messages import (
     AIMessage, HumanMessage, ToolMessage
 )
 
+from datetime import (
+    datetime, UTC
+)
+
 from json import loads
 
 async def principal(
@@ -24,6 +28,8 @@ async def principal(
 )->PartialState:
 
     messages = state["messages"]
+
+    fecha_actual = datetime.now(UTC).strftime("%d/%m/%Y")
 
     last_message = messages[-1]
 
@@ -51,6 +57,7 @@ async def principal(
     response = await chain.ainvoke(
         {
             "messages": messages,
+            "fecha_actual": fecha_actual
         }
     )
 
@@ -66,6 +73,8 @@ async def especialista(
     
     tipo_causa = state["causa"]["tipo"]
     
+    fecha_actual = datetime.now(UTC).strftime("%d/%m/%Y")
+    
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", node_prompts.chat_especialista.system),
@@ -80,7 +89,8 @@ async def especialista(
     response = await chain.ainvoke(
         {
             "messages": messages,
-            "tipo_causa": tipo_causa
+            "tipo_causa": tipo_causa,
+            "fecha_actual": fecha_actual
         }
     )
 
