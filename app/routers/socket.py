@@ -1,9 +1,9 @@
 from fastapi import (
-    WebSocket, WebSocketDisconnect
+    APIRouter, WebSocket, WebSocketDisconnect
 )
-from fastapi import (
-    APIRouter, Depends
-    )
+import json
+from typing import Dict, Any
+import time
 from ..core.socket import manager
 from ..core.security import validate_api_key
 
@@ -15,12 +15,41 @@ router = APIRouter(
 @router.websocket("/ws/")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
+    last_ping = time.time()
+    
     try:
         while True:
-            # Mantener la conexión abierta
-            await websocket.receive_text()
+            # Recibir mensaje
+            data = await websocket.receive_text()
+            
+            try:
+                message = json.loads(data)
+                
+                # Manejar mensaje de ping
+                if isinstance(message, dict) and message.get('type') == 'ping':
+                    # Enviar pong de vuelta
+                    await websocket.send_json({
+                        'type': 'pong',
+                        'timestamp': message.get('timestamp')
+                    })
+                    last_ping = time.time()
+                    continue
+                    
+            except json.JSONDecodeError:
+                # Si no es un JSON válido, lo ignoramos
+                continue
+            
     except WebSocketDisconnect:
         await manager.disconnect(websocket)
     except Exception as e:
         print(f"WebSocket error: {str(e)}")
-        await manager.disconnect(websocket, "Error interno del servidor")
+        try:
+            await manager.disconnect(websocket)
+        except:
+            pass
+    finally:
+        # Asegurarse de que la conexión se cierre correctamente
+        try:
+            await websocket.close()
+        except:
+            pass
